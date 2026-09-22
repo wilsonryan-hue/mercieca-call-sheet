@@ -16,6 +16,35 @@ This file contains no secrets and must never contain passwords, API keys, access
 8. Keep entries factual and short. Distinguish working, unverified, blocked, and planned.
 9. Never describe a feature as live or connected unless it has actually been verified.
 
+
+## Anti-loop and speed rules
+
+These rules are mandatory for every AI working from this file.
+
+1. **One active task per project.** Do not start a second improvement while the current task is unresolved unless Ryan explicitly reprioritises.
+2. **One builder, one reviewer.** The builder implements. The reviewer reviews the delta. Do not have two agents independently rebuild the same feature.
+3. **Maximum two coordination cycles per task.**
+   - Cycle 1: builder implements and reports.
+   - Cycle 2: reviewer identifies only material issues; builder corrects and verifies.
+   - After that, either mark done, mark blocked, or ask Ryan for a decision. No ping-pong.
+4. **No-change = no reply.** If the relevant commit SHA, handoff note, or evidence has not materially changed, do not produce another review or acknowledgement.
+5. **Delta-only review.** Review only changes since the last recorded SHA unless an architecture change requires a wider audit.
+6. **No speculative development.** Do not add features, refactor working code, redesign UI, or expand scope unless it directly helps the current acceptance criteria, fixes a material bug/security issue, or Ryan explicitly asks.
+7. **Done means stop.** Once the acceptance criteria are met and verified, stop development on that task. Record later ideas under `DEFERRED`; do not implement them.
+8. **External blocker = park it.** If a provider, account, payment, approval, or user action blocks progress, record the exact blocker and continue only with independent work. Do not repeatedly retry the same blocked action.
+9. **No acknowledgement loops.** Entries that only say "read", "agreed", "thanks", or restate prior notes require no response.
+10. **Use compact handoffs.** Every material update should use:
+   - `STATUS`
+   - `CHANGED`
+   - `VERIFIED`
+   - `RISK/BLOCKER`
+   - `NEXT`
+   - `NEEDS_RYAN` (yes/no)
+11. **Time-to-usable beats polish.** For urgent work, prefer the smallest verified change that makes the product operational today.
+12. **Coordination notes are not an automatic task queue.** An agent must not start new work merely because another agent mentioned an idea in this file.
+
+Current coordination mode: **ACTIVE_URGENT** for the Mercieca call sheet.
+
 ---
 
 ## CHATGPT TO GROK
