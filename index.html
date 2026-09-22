@@ -94,12 +94,6 @@
 
     <ol class="people" id="list"></ol>
 
-    <section>
-      <h2 style="margin-top:28px">Still open</h2>
-      <p class="small muted">One person from each agency. Search, then paste their profile.</p>
-      <div id="agencies"></div>
-    </section>
-
     <section class="card">
       <h2>First interview</h2>
       <p class="small muted" style="margin-top:4px">Use these if the first call turns into a proper conversation.</p>
@@ -111,15 +105,6 @@
   <script>
     const ROLE = "Account Director, consumer PR";
     const PLACE = "London, hybrid is fine";
-    const AGENCIES = [
-      ["Taylor Herring", "They are hiring an account director. Named clients include Samsung, Sky and Disney. No person checked yet.", "Account Director Taylor Herring London"],
-      ["Golin", "They are hiring a consumer account director in London. No person checked yet.", "Account Director consumer Golin London"],
-      ["Ogilvy", "They are hiring consumer PR account directors in London. No person checked yet.", "Account Director consumer PR Ogilvy London"],
-      ["Grayling", "Consumer clients named on their hiring page include easyJet holidays and Cathedral City. No person checked yet.", "Account Director consumer Grayling London"],
-      ["The Romans", "London consumer agency. No person checked yet.", "Account Director The Romans PR London"],
-      ["MSL", "Alex Watherston was an account director here before PrettyGreen. No current name checked.", "Account Director consumer MSL London"],
-      ["Frank", "London consumer PR agency. No person checked yet.", "Account Director Frank PR London"]
-    ];
     const STARTERS = [
       {
         id: "alex",
@@ -254,9 +239,7 @@
     let open = null;
 
     function draw() {
-      const agenciesNamed = new Set(state.people.map((p) => keyOf(p.employer)).filter((k) => k && k !== "unknown")).size;
-      const openAgencies = AGENCIES.filter((a) => !state.people.some((p) => keyOf(p.employer) === keyOf(a[0])));
-      document.getElementById("summary").textContent = `${ROLE}. ${agenciesNamed} agencies named. ${openAgencies.length} still open.`;
+      document.getElementById("summary").textContent = ROLE + ". " + state.people.length + " people checked.";
       document.getElementById("match").value = state.match;
       document.getElementById("matchLabel").textContent = state.match + "%";
       document.getElementById("matchHint").textContent = hint(state.match);
@@ -330,30 +313,6 @@
           save(); draw();
         };
         list.appendChild(li);
-      }
-
-      const box = document.getElementById("agencies");
-      box.innerHTML = "";
-      for (const [name, note, q] of openAgencies) {
-        const div = document.createElement("div");
-        div.className = "card";
-        div.innerHTML = `
-          <div class="between">
-            <h3>${escapeHtml(name)}</h3>
-            <a target="_blank" rel="noreferrer" href="https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(q)}">Find on LinkedIn</a>
-          </div>
-          <p class="small muted" style="margin-top:6px">${escapeHtml(note)}</p>
-          <div class="row agency" style="margin-top:10px">
-            <input type="url" placeholder="Paste their profile link" />
-            <button class="btn slim" type="button">Add</button>
-          </div>
-        `;
-        div.querySelector("button").onclick = () => {
-          const url = div.querySelector("input").value.trim();
-          if (!/^https?:\/\//i.test(url)) { alert("Paste a full profile link, starting with https://"); return; }
-          addPerson({ sourceUrl: url, employer: name, why: "Added against " + name + ". Open the profile and correct the title if it is wrong." });
-        };
-        box.appendChild(div);
       }
 
       const qs = document.getElementById("questions");
