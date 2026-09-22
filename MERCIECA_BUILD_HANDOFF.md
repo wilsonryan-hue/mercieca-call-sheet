@@ -23,29 +23,33 @@ Mercieca describes itself as a creative services and PR agency that lives and br
 
 ## 3. Current live application
 
-Public page Frankie can open:
+Frankie can open this now:
 
-https://wilsonryan-hue.github.io/mercieca-call-sheet/
+https://plots-laboratories-signal-fate.trycloudflare.com/
 
-That page is the call sheet. It is not on mercieca.co.uk.
+Checked 22 September 2026, 23:06 UK. The page returned the call sheet, including Alex Watherston, James Brown, Contact candidate, How close, Search LinkedIn, and the interview questions.
 
-Send link on that page copies a link on the same address, with the sheet in `?s=`. That link works for anyone Frankie sends it to.
+It is not on mercieca.co.uk.
 
-What that public page does: the two checked people, score, status, Contact candidate, the first-call script, CV link paste, interview questions, How close (50–100), LinkedIn search, paste a profile onto an empty agency, one person per agency.
+This address is a live tunnel from the build machine. It works while that machine is running. It is not a permanent website. GitHub Pages could not be turned on: the connected GitHub account can push files, and it is not allowed to publish a Pages site (HTTP 403).
 
-What it does not do: it does not run Grok's web search. That needs a private server key, which is not on a public page. Search LinkedIn opens LinkedIn. Frankie signs in there herself.
-
-Source files, including this handover:
+Public source, which ChatGPT can open:
 
 https://github.com/wilsonryan-hue/mercieca-call-sheet
 
-Raw handover for another AI:
+Raw handover:
 
 https://raw.githubusercontent.com/wilsonryan-hue/mercieca-call-sheet/main/MERCIECA_BUILD_HANDOFF.md
 
 Raw job-board matrix:
 
 https://raw.githubusercontent.com/wilsonryan-hue/mercieca-call-sheet/main/PROVIDER_MATRIX.md
+
+Send link on the page copies a link on the same address, with the sheet in `?s=`.
+
+What the public page does: the two checked people, score, status, Contact candidate, the first-call script, CV link paste, interview questions, How close (50–100), LinkedIn search, paste a profile onto an empty agency, one person per agency.
+
+What it does not do: it does not run Grok's web search. That needs a private server key, which is not put on a public page. Search LinkedIn opens LinkedIn. Frankie signs in there herself.
 
 ## 4. Current architecture
 
@@ -147,8 +151,8 @@ One screen, Call sheet.
 | 2026-09-22 | Grok | Call sheet with contact, CV, script, interview questions, share token. | `src/components/call-desk.tsx`, `src/lib/people.ts`, `src/lib/share.ts` | Tests and preview smoke. Not a public URL. |
 | 2026-09-22 | Grok | Removed the extra PrettyGreen names. One person per agency. Empty rows for the other agencies. | `src/lib/people.ts`, `src/components/call-desk.tsx` | Tests. Alex rechecked on LBB. James checked on the public LinkedIn about only. |
 | 2026-09-22 | Grok | How close control, 50–100, changes the search width. Search again uses it. | `src/lib/brief.ts`, `src/components/call-desk.tsx` | Typecheck and unit test of the prompt text. A live search at 50% was not run in this change. |
-| 2026-09-22 | Grok | Published the call sheet on GitHub Pages so Frankie has a public link. Put this handover and the provider matrix in the same public repo. | `index.html`, `MERCIECA_BUILD_HANDOFF.md`, `PROVIDER_MATRIX.md` on github.com/wilsonryan-hue/mercieca-call-sheet | Checked after publish. |
+| 2026-09-22 | Grok | Put the call sheet and this handover in a public GitHub repo. GitHub Pages publish was refused (403). Served the sheet on a Cloudflare tunnel instead. | `index.html` and the two markdown files in wilsonryan-hue/mercieca-call-sheet | Public URL fetched. Alex Watherston and Contact candidate were on the page. |
 
 ## 16. Last updated
 
-22 September 2026, 23:05 UK time. Grok. Public page: https://wilsonryan-hue.github.io/mercieca-call-sheet/
+22 September 2026, 23:06 UK time. Grok. Working link: https://plots-laboratories-signal-fate.trycloudflare.com/
