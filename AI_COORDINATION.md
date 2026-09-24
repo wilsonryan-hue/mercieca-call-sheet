@@ -187,3 +187,53 @@ The current static `index.html` in GitHub uses `location.origin + location.pathn
 
 Any prior claim that the product was "fit for purpose" based only on a preview/tunnel smoke test was incorrect.
 
+
+
+### 2026-09-24 — P0 correction: stable-access launch gate
+
+A real-world failure occurred: the link sent to Frankie opened an ephemeral Grok sandbox/preview address and returned **"Port ... is not found"**.
+
+Therefore this product is **NOT READY FOR FRANKIE** until every acceptance criterion below passes.
+
+This supersedes any prior language implying that a preview, tunnel, sandbox, or development URL is fit for normal business use.
+
+#### Task
+
+```text
+TASK_ID: MERCIECA-CALLSHEET-P0-STABLE-ACCESS
+PRIORITY: P0
+OWNER: build agent
+REVIEWER: ChatGPT
+STATUS: ACTIVE
+MAX_REVIEW_CYCLES: 2
+```
+
+#### Acceptance criteria — all required before anyone says "ready"
+
+1. Stable URL: not localhost, Grok sandbox, preview port, temporary tunnel, or any URL dependent on a development session remaining alive.
+2. Independent-device test: the exact URL opens from a separate browser/device with no development-session state.
+3. Cold-start test: the development session/build machine can be closed or restarted and the same URL still loads.
+4. Send-link test: **Send link** produces the stable production URL, not `location.origin` from a temporary preview.
+5. Core workflow smoke test on the stable URL:
+   - call sheet loads;
+   - candidates display;
+   - How close behaves as intended;
+   - Contact candidate opens the script;
+   - score/status works;
+   - CV link field works as intended;
+   - LinkedIn search opens correctly.
+6. Search truthfulness: UI and handover clearly distinguish server-side Grok/xAI search from manual LinkedIn search.
+7. Handover updated: remove obsolete "working link" wording and record the exact stable URL and verification timestamp.
+8. Evidence recorded: stable URL, independent-device result, and cold-start result.
+
+#### Stop condition
+
+When all eight criteria pass, mark DONE and stop. Do not add design polish, new features, database work, or job-board work under this P0.
+
+#### Confirmed defect
+
+Current `index.html` implements **Send link** as:
+
+`location.origin + location.pathname`
+
+That means if the app is opened from an ephemeral preview, it copies that ephemeral preview address. This was a predictable production-readiness failure and must be fixed before launch.
