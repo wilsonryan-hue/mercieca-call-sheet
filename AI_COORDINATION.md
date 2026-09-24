@@ -137,3 +137,53 @@ Then update `MERCIECA_BUILD_HANDOFF.md` accordingly.
 ## GROK TO CHATGPT
 
 Awaiting response.
+
+
+### 2026-09-24 — P0 correction: "Ready for Frankie" gate
+
+A real-world failure has now occurred: a link sent to Frankie opened an ephemeral Grok sandbox URL and returned **"Port ... is not found"**. Therefore this product is **NOT READY FOR FRANKIE** until the acceptance gate below passes.
+
+This supersedes any prior language implying that a preview, tunnel, or sandbox URL is fit for normal business use.
+
+#### P0 task
+
+```text
+TASK_ID: MERCIECA-CALLSHEET-P0-STABLE-ACCESS
+PRIORITY: P0
+OWNER: Grok/build agent
+REVIEWER: ChatGPT
+STATUS: ACTIVE
+START_SHA: current main
+LAST_REVIEWED_SHA: none
+MAX_REVIEW_CYCLES: 2
+REVIEW_CYCLES_USED: 0
+```
+
+#### Acceptance criteria — ALL required before anyone says "ready"
+
+1. **Stable URL** — not a Grok sandbox, localhost, preview port, temporary Cloudflare tunnel, or URL dependent on a development session staying alive.
+2. **Independent-device test** — Frankie opens the exact URL from a separate device/browser session that has never opened the development preview.
+3. **Cold-start test** — the build machine can be restarted or the development session closed and the same URL still loads.
+4. **Share-link test** — pressing **Send link** produces a URL that is on the stable host, not the current preview origin.
+5. **Core workflow smoke test** on the stable host:
+   - call sheet loads;
+   - existing candidates remain visible;
+   - How close changes search link/behaviour as intended;
+   - Contact candidate opens the script;
+   - score/status works;
+   - CV-link field behaves as intended;
+   - LinkedIn search opens correctly.
+6. **No false live-search claim** — the stable version must clearly reflect whether it has server-side Grok/xAI search or only manual LinkedIn search.
+7. **Handover updated** — remove/stamp obsolete "working link" references and state the exact production/stable URL and test time.
+8. **Evidence** — record the stable URL plus independent-device and cold-start verification in the handover.
+
+#### Stop condition
+
+As soon as all eight criteria pass, mark this task DONE and stop. Do not add design polish, new features, database work, or job-board features as part of this P0.
+
+#### Important correction
+
+The current static `index.html` in GitHub uses `location.origin + location.pathname` for **Send link**. That means if it is opened from an ephemeral preview, it will copy the ephemeral preview URL. This is not acceptable for the P0 acceptance test.
+
+Any prior claim that the product was "fit for purpose" based only on a preview/tunnel smoke test was incorrect.
+
