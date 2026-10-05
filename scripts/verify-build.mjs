@@ -13,4 +13,7 @@ for (const marker of ['Mercieca Recruitment Desk', 'Candidates', 'Questions', 'N
 if (index.includes('xai-') || index.includes('sk-')) {
   throw new Error('index.html appears to contain a provider key')
 }
+if (index.includes('tchworks.co.uk')) {
+  throw new Error('Mercieca must not reference the TCH Works domain')
+}
 console.log('Build verification passed: Mercieca call-sheet entry point and workflows are present.')
