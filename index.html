@@ -6,7 +6,7 @@
   <title>Mercieca Recruitment Desk</title>
   <meta name="description" content="Mercieca recruitment desk: searches, job descriptions, job boards, pay check and ready-written messages for a PR and marketing agency.">
   <meta name="robots" content="noindex,nofollow,noarchive">
-  <link rel="canonical" href="https://mercieca-recruitment.vercel.app/">
+  <link rel="canonical" href="https://www.tchworks.co.uk/mercieca-recruitment/">
   <style>
     :root{
       --ink:#111111;--muted:#5f5f5f;--line:#dedede;--paper:#ffffff;--soft:#f6f6f3;
@@ -232,7 +232,7 @@
 (function(){
   "use strict";
 
-  var CANONICAL_URL = "https://mercieca-recruitment.vercel.app/";
+  var CANONICAL_URL = "https://www.tchworks.co.uk/mercieca-recruitment/";
   var KEY = "mercieca-recruitment-v2";
   var OLD_KEY = "mercieca-recruitment-v1";
   var DEFAULT_ID = "sch-default";
@@ -307,14 +307,10 @@
 
   /* Job boards. Prices are only shown where they were seen on the board's own page. */
   var BOARDS = [
-    {id:"prweek",name:"PRWeek Jobs",group:"PR and marketing specialists",
-     why:"The main UK trade title for PR. People who read it are working in PR now.",
-     site:"https://www.prweek.co.uk/jobs",post:"https://www.prweek.co.uk/jobs",
-     price:"Price not published. Ask PRWeek when you post."},
     {id:"campaign",name:"Campaign Jobs",group:"PR and marketing specialists",
      why:"Run by Campaign magazine. Strong for advertising, media and creative agency people.",
      site:"https://jobs.campaignlive.co.uk/",post:"https://jobs.campaignlive.co.uk/",
-     price:"Price not published. Ask Campaign when you post."},
+     price:"Could not be opened on 6 Oct 2026. PRWeek Jobs (same publisher) has closed, so check this board is still running before you pay."},
     {id:"thedots",name:"The Dots",group:"PR and marketing specialists",
      why:"A creative community. You can post a job and also search people (paid plan).",
      site:"https://the-dots.com/jobs/search",post:"https://the-dots.com/jobs/create",
@@ -407,6 +403,11 @@
     return String(v == null ? "" : v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
   }
   function str(v, max){ return String(v == null ? "" : v).slice(0, max || 400); }
+  function safeId(v){ return String(v == null ? "" : v).replace(/[^A-Za-z0-9_-]/g,"").slice(0,60); }
+  function employerKey(v){
+    var low = String(v || "").toLowerCase().replace(/&/g," and ");
+    return low.replace(/\b(the|ltd|limited|uk|plc|group)\b/g," ").replace(/[^a-z0-9]+/g,"") || low.replace(/[^a-z0-9]+/g,"");
+  }
   function safeUrl(u){
     try{ var x = new URL(String(u || "").trim()); return (x.protocol === "http:" || x.protocol === "https:") ? x.href : ""; }
     catch(e){ return ""; }
@@ -463,14 +464,14 @@
 
   function normSearch(s){
     var out = {
-      id:str(s.id,60) || uid("sch"), title:str(s.title,120) || "Untitled role", level:LEVELS.indexOf(s.level) > -1 ? s.level : "",
+      id:safeId(s.id) || uid("sch"), title:str(s.title,120) || "Untitled role", level:LEVELS.indexOf(s.level) > -1 ? s.level : "",
       sector:str(s.sector,120), place:str(s.place,120), helpful:str(s.helpful,300), jdId:str(s.jdId,60),
       threshold:[50,60,70,80,90,100].indexOf(Number(s.threshold)) > -1 ? Number(s.threshold) : 100,
       status:s.status === "closed" ? "closed" : "open", created:str(s.created,40) || now(), updated:str(s.updated,40) || now(), custom:[]
     };
     (Array.isArray(s.custom) ? s.custom : []).forEach(function(c){
       if(!c || !c.name || !c.employer) return;
-      out.custom.push({id:str(c.id,60) || uid("manual"),name:str(c.name,120),title:str(c.title,160),employer:str(c.employer,160),location:str(c.location,120),
+      out.custom.push({id:safeId(c.id) || uid("manual"),name:str(c.name,120),title:str(c.title,160),employer:str(c.employer,160),location:str(c.location,120),
         match:Math.max(50,Math.min(100,Number(c.match) || 90)),why:str(c.why,800),evidence:str(c.evidence,800),sourceLabel:str(c.sourceLabel,60) || "source",
         sourceUrl:safeUrl(c.sourceUrl),verified:"",custom:true});
     });
@@ -479,26 +480,32 @@
   function normalize(raw){
     raw = raw && typeof raw === "object" ? raw : {};
     var st = {v:2,searches:[],currentId:"",jds:[],boards:{},customBoards:[],templates:seedTpls(),me:{name:"Frankie Mercieca"},work:{},pay:{level:"Account Director",sector:"consumer",offer:""}};
-    (Array.isArray(raw.searches) ? raw.searches : []).forEach(function(s){ if(s && typeof s === "object") st.searches.push(normSearch(s)); });
+    var seen = {};
+    (Array.isArray(raw.searches) ? raw.searches : []).forEach(function(s){
+      if(!s || typeof s !== "object") return;
+      var n = normSearch(s);
+      if(seen[n.id]) n.id = uid("sch");
+      seen[n.id] = true; st.searches.push(n);
+    });
     if(!st.searches.length) st.searches.push(defaultSearch());
     st.currentId = st.searches.some(function(s){ return s.id === raw.currentId; }) ? raw.currentId : st.searches[0].id;
     if(Array.isArray(raw.jds) && raw.jds.length){
       raw.jds.forEach(function(j){
         if(!j || !j.title) return;
-        st.jds.push({id:str(j.id,60) || uid("jd"),title:str(j.title,120),level:LEVELS.indexOf(j.level) > -1 ? j.level : "",body:str(j.body,12000),
+        st.jds.push({id:safeId(j.id) || uid("jd"),title:str(j.title,120),level:LEVELS.indexOf(j.level) > -1 ? j.level : "",body:str(j.body,12000),
           questions:Array.isArray(j.questions) ? j.questions.map(function(q){ return str(q,400); }).filter(Boolean).slice(0,12) : [],seed:!!j.seed});
       });
     }
     if(!st.jds.length) st.jds = seedJds();
     if(raw.boards && typeof raw.boards === "object"){
       Object.keys(raw.boards).forEach(function(k){
-        var b = raw.boards[k]; if(!b || typeof b !== "object" || badKey(k)) return;
-        st.boards[str(k,60)] = {use:!!b.use,profile:str(b.profile,300),note:str(b.note,600)};
+        var b = raw.boards[k]; if(!b || typeof b !== "object" || badKey(k) || !safeId(k)) return;
+        st.boards[safeId(k)] = {use:!!b.use,profile:str(b.profile,300),note:str(b.note,600)};
       });
     }
     (Array.isArray(raw.customBoards) ? raw.customBoards : []).forEach(function(b){
       var u = safeUrl(b && b.url); if(!b || !b.name || !u) return;
-      st.customBoards.push({id:str(b.id,60) || uid("cb"),name:str(b.name,100),url:u});
+      st.customBoards.push({id:safeId(b.id) || uid("cb"),name:str(b.name,100),url:u});
     });
     if(raw.templates && typeof raw.templates === "object"){
       Object.keys(raw.templates).forEach(function(k){ if(ownKey(st.templates, k) && typeof raw.templates[k] === "string") st.templates[k] = raw.templates[k].slice(0,6000); });
@@ -506,8 +513,8 @@
     if(raw.me && typeof raw.me.name === "string" && raw.me.name.trim()) st.me.name = str(raw.me.name.trim(),100);
     if(raw.work && typeof raw.work === "object"){
       Object.keys(raw.work).forEach(function(k){
-        var w = raw.work[k]; if(!w || typeof w !== "object" || badKey(k)) return;
-        st.work[str(k,60)] = {status:STATUSES.indexOf(w.status) > -1 ? w.status : "Not contacted",rating:Math.max(0,Math.min(5,Number(w.rating) || 0)),
+        var w = raw.work[k]; if(!w || typeof w !== "object" || badKey(k) || !safeId(k)) return;
+        st.work[safeId(k)] = {status:STATUSES.indexOf(w.status) > -1 ? w.status : "Not contacted",rating:Math.max(0,Math.min(5,Number(w.rating) || 0)),
           notes:str(w.notes,4000),cvUrl:safeUrl(w.cvUrl),open:w.open === "contact" ? "contact" : "",tpl:str(w.tpl,40)};
       });
     }
@@ -725,7 +732,7 @@
       '<div class="candidate-actions"><button type="button" class="btn red" data-act="contact" data-id="' + esc(c.id) + '">Contact candidate</button>' +
       (c.custom ? '<button type="button" class="btn danger small" data-act="remove-cand" data-id="' + esc(c.id) + '">Remove from the sheet</button>' : '') + '</div>';
     if(w.open === "contact"){
-      var tp = state.templates[tplId] || "";
+      var tp = ownKey(state.templates, tplId) ? state.templates[tplId] : "";
       html += '<div class="panel"><strong>Ready-written message</strong><label class="f" for="tp-' + esc(c.id) + '">Which message?</label><select id="tp-' + esc(c.id) + '" data-bind="tpl" data-id="' + esc(c.id) + '">' + tplOptions + '</select>' +
         '<div class="message" id="msg-' + esc(c.id) + '">' + esc(fill(tp, c, s)) + '</div>' +
         '<div class="btn-row"><button type="button" class="btn yellow" data-act="copy-msg" data-id="' + esc(c.id) + '">Copy message</button><a class="btn secondary small" href="#messages">Change the wording</a></div></div>';
@@ -828,7 +835,7 @@
     });
     html += '<section class="section"><form class="card" data-form="board-new" novalidate style="max-width:700px"><h2>Add another job board</h2><div class="two"><div><label class="f" for="cbName">Name</label><input id="cbName" required></div>' +
       '<div><label class="f" for="cbUrl">Web address</label><input id="cbUrl" type="url" placeholder="https://..." required></div></div><div class="btn-row"><button class="btn red" type="submit">Add this board</button></div><p id="cbErr" class="err" role="alert"></p></form></section>';
-    html += '<div class="privacy"><strong>Checked 5 October 2026.</strong> Prices change, so always check on the board. Marketing Week no longer runs a job board, so it is not listed.</div>';
+    html += '<div class="privacy"><strong>Checked 6 October 2026.</strong> Prices change, so always check on the board. PRWeek Jobs has closed (PRWeek now asks employers to contact them to promote a vacancy) and Marketing Week no longer runs a job board, so neither is listed.</div>';
     return html;
   }
 
@@ -971,7 +978,7 @@
     if(act === "contact"){ var wc = workOf(id); wc.open = wc.open === "contact" ? "" : "contact"; save(); renderCandidates(); return; }
     if(act === "copy-msg"){
       var c = candidatesOf(s).filter(function(x){ return x.id === id; })[0]; if(!c) return;
-      var w2 = workOf(id), tid = state.templates[w2.tpl] !== undefined ? w2.tpl : "t-call";
+      var w2 = workOf(id), tid = ownKey(state.templates, w2.tpl) ? w2.tpl : "t-call";
       copyText(fill(state.templates[tid], c, s), el); return;
     }
     if(act === "remove-cand"){
@@ -988,6 +995,8 @@
     }
     if(act === "del-search"){
       if(window.confirm("Delete this search and the people on it? This cannot be undone.")){
+        var gone = state.searches.filter(function(x){ return x.id === id; })[0];
+        if(gone) gone.custom.forEach(function(c){ delete state.work[c.id]; });
         state.searches = state.searches.filter(function(x){ return x.id !== id; });
         if(!state.searches.length) state.searches.push(defaultSearch());
         if(state.currentId === id) state.currentId = state.searches[0].id;
@@ -1062,7 +1071,7 @@
     if(bind === "tpl"){
       workOf(id).tpl = el.value; save();
       var c = candidatesOf(s).filter(function(x){ return x.id === id; })[0], box = $("#msg-" + id);
-      if(c && box) box.textContent = fill(state.templates[el.value] || "", c, s); return;
+      if(c && box) box.textContent = fill(ownKey(state.templates, el.value) ? state.templates[el.value] : "", c, s); return;
     }
     if(bind === "board-use"){ (state.boards[id] = state.boards[id] || {use:false,profile:"",note:""}).use = el.checked; save(); render(); toast(el.checked ? "Saved. This board will be used in your searches." : "Saved"); return; }
     if(bind === "pay-level"){ state.pay.level = el.value; save(); $("#payResult").innerHTML = payResultHtml(); return; }
@@ -1079,7 +1088,7 @@
       err.textContent = "";
       if(!name || !employer || !title || !source){ err.textContent = "Please add a name, employer, job title and the full web address of their profile."; return; }
       if(/mercieca/i.test(employer)){ err.textContent = "Mercieca's own staff are not candidates for this sheet."; return; }
-      var dup = candidatesOf(s).some(function(c){ return c.employer.toLowerCase() === employer.toLowerCase(); });
+      var dup = candidatesOf(s).some(function(c){ return employerKey(c.employer) === employerKey(employer); });
       if(dup){ err.textContent = "There is already someone from that employer. Keep one person per employer on the sheet."; return; }
       s.custom.push({id:uid("manual"),name:str(name,120),title:str(title,160),employer:str(employer,160),location:"",match:match,why:str(why,800) || "Added by hand for review.",
         evidence:"Source supplied by hand. Check the source before you approach them.",sourceLabel:"source",sourceUrl:source,verified:"",custom:true});
