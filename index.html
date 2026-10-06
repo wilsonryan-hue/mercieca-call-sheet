@@ -201,7 +201,7 @@
   </style>
 </head>
 <body>
-<a class="skip" href="#main">Skip to the main part of the page</a>
+<a class="skip" href="#main" data-act="skip">Skip to the main part of the page</a>
 <header class="top">
   <div class="wrap nav-row">
     <a class="brand" href="#home" aria-label="Mercieca Recruitment Desk, go to the home page"><span>Mercieca</span> Recruitment Desk</a>
@@ -403,7 +403,10 @@
     return String(v == null ? "" : v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
   }
   function str(v, max){ return String(v == null ? "" : v).slice(0, max || 400); }
-  function safeId(v){ return String(v == null ? "" : v).replace(/[^A-Za-z0-9_-]/g,"").slice(0,60); }
+  function safeId(v){
+    var id = String(v == null ? "" : v).replace(/[^A-Za-z0-9_-]/g,"").slice(0,60);
+    return badKey(id) ? "" : id;
+  }
   function employerKey(v){
     var low = String(v || "").toLowerCase().replace(/&/g," and ");
     return low.replace(/\b(the|ltd|limited|uk|plc|group)\b/g," ").replace(/[^a-z0-9]+/g,"") || low.replace(/[^a-z0-9]+/g,"");
@@ -470,7 +473,7 @@
       status:s.status === "closed" ? "closed" : "open", created:str(s.created,40) || now(), updated:str(s.updated,40) || now(), custom:[]
     };
     (Array.isArray(s.custom) ? s.custom : []).forEach(function(c){
-      if(!c || !c.name || !c.employer) return;
+      if(!c || !c.name || !c.employer || !safeUrl(c.sourceUrl)) return;
       out.custom.push({id:safeId(c.id) || uid("manual"),name:str(c.name,120),title:str(c.title,160),employer:str(c.employer,160),location:str(c.location,120),
         match:Math.max(50,Math.min(100,Number(c.match) || 90)),why:str(c.why,800),evidence:str(c.evidence,800),sourceLabel:str(c.sourceLabel,60) || "source",
         sourceUrl:safeUrl(c.sourceUrl),verified:"",custom:true});
@@ -489,14 +492,14 @@
     });
     if(!st.searches.length) st.searches.push(defaultSearch());
     st.currentId = st.searches.some(function(s){ return s.id === raw.currentId; }) ? raw.currentId : st.searches[0].id;
-    if(Array.isArray(raw.jds) && raw.jds.length){
+    if(Array.isArray(raw.jds)){
       raw.jds.forEach(function(j){
         if(!j || !j.title) return;
         st.jds.push({id:safeId(j.id) || uid("jd"),title:str(j.title,120),level:LEVELS.indexOf(j.level) > -1 ? j.level : "",body:str(j.body,12000),
           questions:Array.isArray(j.questions) ? j.questions.map(function(q){ return str(q,400); }).filter(Boolean).slice(0,12) : [],seed:!!j.seed});
       });
     }
-    if(!st.jds.length) st.jds = seedJds();
+    if(!Array.isArray(raw.jds)) st.jds = seedJds();
     if(raw.boards && typeof raw.boards === "object"){
       Object.keys(raw.boards).forEach(function(k){
         var b = raw.boards[k]; if(!b || typeof b !== "object" || badKey(k) || !safeId(k)) return;
@@ -555,7 +558,7 @@
   function touch(s){ s.updated = now(); }
   function candidatesOf(s){ return (s.id === DEFAULT_ID ? VERIFIED : []).concat(s.custom); }
   function workOf(id){
-    if(!state.work[id]) state.work[id] = {status:"Not contacted",rating:0,notes:"",cvUrl:"",open:"",tpl:""};
+    if(!ownKey(state.work, id)) state.work[id] = {status:"Not contacted",rating:0,notes:"",cvUrl:"",open:"",tpl:""};
     return state.work[id];
   }
   function jdById(id){ return state.jds.filter(function(j){ return j.id === id; })[0]; }
@@ -577,14 +580,20 @@
   /* ---------- Search words ---------- */
 
   function searchWords(s, v){
-    var t = s.title, senior = /^senior/i.test(t) ? t : "Senior " + t;
+    var t = s.title, i = LEVELS.indexOf(s.level || levelFromTitle(t));
+    var up = i > -1 ? LEVELS[i + 1] : (/^senior/i.test(t) ? "" : "Senior " + t);
+    var down = i > 0 ? LEVELS[i - 1] : "";
+    function any(list){
+      var seen = {}, q = list.filter(function(x){ var k = String(x || "").toLowerCase(); if(!k || seen[k]) return false; seen[k] = true; return true; });
+      return q.length === 1 ? '"' + q[0] + '"' : '("' + q.join('" OR "') + '")';
+    }
     var sector = s.sector ? " " + s.sector : "", place = s.place ? " " + s.place : "";
     if(v >= 100) return '"' + t + '"' + sector + place + (s.helpful ? " " + s.helpful.split(",")[0].trim() : "") + " agency";
-    if(v >= 90) return '("' + t + '" OR "' + senior + '")' + sector + place + " agency";
-    if(v >= 80) return '("' + t + '" OR "' + senior + '")' + sector + place + " agency social influencer";
-    if(v >= 70) return '("' + t + '" OR "' + senior + '") PR communications' + place + " agency";
-    if(v >= 60) return '("' + t + '" OR "' + senior + '") PR communications' + place;
-    return '("' + t + '" OR "' + senior + '" OR "Senior Account Manager") PR communications' + place;
+    if(v >= 90) return any([t, up]) + sector + place + " agency";
+    if(v >= 80) return any([t, up]) + sector + place + " agency social influencer";
+    if(v >= 70) return any([t, up]) + " PR communications" + place + " agency";
+    if(v >= 60) return any([t, up]) + " PR communications" + place;
+    return any([t, up, down]) + " PR communications" + place;
   }
   function matchHint(v){
     if(v >= 100) return "Exactly this role only.";
@@ -799,6 +808,7 @@
         '<button class="btn secondary small" type="button" data-act="jd-edit" data-id="' + esc(j.id) + '">' + (editing ? "Close" : "Change the wording") + '</button></div></div>';
       if(editing){
         html += '<div class="jd-edit"><label class="f" for="jdE-t">Job title</label><input id="jdE-t" value="' + esc(j.title) + '">' +
+          '<label class="f" for="jdE-l">Level</label><select id="jdE-l"><option value="">Not sure</option>' + LEVELS.map(function(l){ return '<option' + (l === j.level ? " selected" : "") + '>' + esc(l) + '</option>'; }).join("") + '</select>' +
           '<label class="f" for="jdE-b">Job description. Anything in [square brackets] is a blank to fill in.</label><textarea id="jdE-b">' + esc(j.body) + '</textarea>' +
           '<label class="f" for="jdE-q">Interview questions (one on each line)</label><textarea id="jdE-q" style="min-height:140px">' + esc(j.questions.join("\n")) + '</textarea>' +
           '<div class="btn-row"><button class="btn yellow" type="button" data-act="jd-save" data-id="' + esc(j.id) + '">Save changes</button><button class="btn danger small" type="button" data-act="jd-del" data-id="' + esc(j.id) + '">Delete this role</button></div></div>';
@@ -965,6 +975,7 @@
   document.addEventListener("click", function(e){
     var el = e.target.closest("[data-act]"); if(!el) return;
     var act = el.getAttribute("data-act"), id = el.getAttribute("data-id"), s = currentSearch();
+    if(act === "skip"){ e.preventDefault(); $("#main").focus(); return; }
     if(act === "copy-link"){ copyText(CANONICAL_URL, el); return; }
     if(act === "copy"){ copyText(el.getAttribute("data-text") || "", el); return; }
     if(act === "open-search"){ state.currentId = id; save(); return; }
@@ -1008,7 +1019,9 @@
     if(act === "jd-save"){
       var j = jdById(id); if(!j) return;
       var tt = str($("#jdE-t").value.trim(),120); if(!tt){ toast("Please give the role a title"); return; }
-      j.title = tt; j.body = str($("#jdE-b").value,12000);
+      var lv = $("#jdE-l").value;
+      if(tt !== j.title && lv === j.level && levelFromTitle(tt)) lv = levelFromTitle(tt);
+      j.title = tt; j.level = LEVELS.indexOf(lv) > -1 ? lv : ""; j.body = str($("#jdE-b").value,12000);
       j.questions = $("#jdE-q").value.split("\n").map(function(q){ return str(q.trim(),400); }).filter(Boolean).slice(0,12);
       ui.jdEdit = ""; save(); render(); toast("Saved"); return;
     }
@@ -1047,7 +1060,7 @@
       s.threshold = Number(el.value); touch(s); save();
       $("#matchValue").textContent = s.threshold; $("#matchHint").textContent = matchHint(s.threshold); renderWhere(); renderCandidates(); return;
     }
-    if(bind === "notes"){ workOf(id).notes = str(el.value,4000); save(); return; }
+    if(bind === "notes"){ workOf(id).notes = str(el.value,4000); touch(s); save(); return; }
     if(bind === "tpl-text"){ state.templates[id] = str(el.value,6000); save(); return; }
     if(bind === "me-name"){ var n = el.value.trim(); if(n){ state.me.name = str(n,100); save(); } return; }
     if(bind === "board-profile"){ (state.boards[id] = state.boards[id] || {use:false,profile:"",note:""}).profile = str(el.value,300); save(); return; }
@@ -1064,7 +1077,7 @@
     if(bind === "status"){ workOf(id).status = STATUSES.indexOf(el.value) > -1 ? el.value : "Not contacted"; touch(s); save(); return; }
     if(bind === "cv"){
       var v = el.value.trim(), w = workOf(id);
-      w.cvUrl = safeUrl(v);
+      w.cvUrl = safeUrl(v); touch(s);
       if(v && !w.cvUrl){ toast("Please paste a full web address that starts with https://"); el.value = ""; }
       save(); return;
     }
@@ -1130,7 +1143,9 @@
     var r = new FileReader();
     r.onload = function(){
       try{
-        var next = normalize(JSON.parse(String(r.result)));
+        var raw = JSON.parse(String(r.result));
+        if(!raw || typeof raw !== "object" || Array.isArray(raw) || raw.v !== 2 || !Array.isArray(raw.searches)) throw new Error("not a desk backup");
+        var next = normalize(raw);
         if(window.confirm("Replace everything on this computer with the backup file?")){ state = next; save(); render(true); toast("Backup restored"); }
       }catch(err){ toast("That file does not look like a backup from this desk"); }
       input.value = "";

@@ -185,7 +185,12 @@ await check('a damaged or hostile backup file cannot break the desk', async () =
   const dir = await mkdtemp(join(tmpdir(), 'mercieca-'))
   const file = join(dir, 'backup.json')
   await writeFile(file, `{
+    "v": 2,
     "searches": [
+      {"id": "p", "title": "Proto", "custom": [
+        {"id": "__proto__", "name": "Proto Id", "employer": "B", "sourceUrl": "https://example.com/p"},
+        {"id": "nosrc", "name": "No Source", "employer": "C"}
+      ]},
       {"id": "dup", "title": "One", "custom": [{"id": "x\\" onmouseover=\\"alert(1)", "name": "Quote Id", "employer": "A", "sourceUrl": "javascript:alert(1)"}]},
       {"id": "dup", "title": "Two", "threshold": 5000},
       {"id": "a b'c", "title": "<script>alert(1)</script>"}
@@ -205,10 +210,72 @@ await check('a damaged or hostile backup file cannot break the desk', async () =
   assert(ids.every((i) => /^[A-Za-z0-9_-]+$/.test(i)), `unsafe search id kept: ${ids}`)
   assert(st.searches.every((s) => [50, 60, 70, 80, 90, 100].includes(s.threshold)), 'bad How close value kept')
   assert(st.pay.sector === 'consumer', 'bad pay sector kept')
+  const people = st.searches.flatMap((s) => s.custom)
+  assert(people.every((c) => c.id !== '__proto__' && /^https?:/.test(c.sourceUrl)), 'person with a prototype id or no source kept')
   assert(({}).polluted === undefined && await page.evaluate(() => ({}).polluted) === undefined, 'prototype polluted')
   for (const r of ['home', 'searches', 'pay', 'messages', 'find']) await go(page, r)
   for (const i of [0, 1, 2]) await page.selectOption('#curSearch', { index: i })
   assert(page.errors.length === 0, `page errors: ${page.errors.join(' | ')}`)
+  await context.close()
+})
+
+await check('a file that is not a desk backup is refused and changes nothing', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'mercieca-'))
+  const { context, page } = await freshPage()
+  await page.goto(BASE + '#find')
+  await page.locator('article.candidate[data-cid="alex-watherston"] textarea.notes').fill('Keep me')
+  for (const [name, body] of [['empty.json', '{}'], ['list.json', '[1,2]'], ['other.json', '{"searches":[],"name":"x"}']]) {
+    await writeFile(join(dir, name), body)
+    await page.setInputFiles('#importFile', join(dir, name))
+    await page.waitForFunction(() => document.querySelector('#toast').textContent.includes('does not look like a backup'))
+    await page.evaluate(() => { document.querySelector('#toast').textContent = '' })
+  }
+  const st = await page.evaluate(() => JSON.parse(localStorage.getItem('mercieca-recruitment-v2')))
+  assert(st.work['alex-watherston'].notes === 'Keep me', 'notes were overwritten')
+  await context.close()
+})
+
+await check('skip link moves to the page content without leaving the page', async () => {
+  const { context, page } = await freshPage()
+  await page.goto(BASE + '#pay')
+  await page.keyboard.press('Tab')
+  await page.keyboard.press('Enter')
+  assert(await page.evaluate(() => location.hash) === '#pay', 'skip link changed the page')
+  assert(await page.evaluate(() => document.activeElement.id) === 'main', 'focus did not move to the content')
+  await context.close()
+})
+
+await check('search words widen one level up and down for senior roles', async () => {
+  const { context, page } = await freshPage()
+  await page.goto(BASE + '#jobs')
+  await page.locator('button[data-act="jd-use"][data-id="jd-sam"]').click()
+  await page.waitForSelector('#nsTitle')
+  await page.click('form[data-form="new-search"] button[type=submit]')
+  await page.waitForSelector('#matchRange')
+  const words = async () => decodeURIComponent((await page.locator('#whereList a', { hasText: 'Search LinkedIn' }).getAttribute('href')).split('keywords=')[1])
+  await page.locator('#matchRange').fill('90')
+  assert((await words()).startsWith('("Senior Account Manager" OR "Account Director")'), `90%: ${await words()}`)
+  await page.locator('#matchRange').fill('50')
+  assert((await words()).startsWith('("Senior Account Manager" OR "Account Director" OR "Account Manager")'), `50%: ${await words()}`)
+  await context.close()
+})
+
+await check('job descriptions: renaming updates the level; an emptied bank stays empty', async () => {
+  const { context, page } = await freshPage()
+  await page.goto(BASE + '#jobs')
+  await page.locator('button[data-act="jd-edit"][data-id="jd-ad"]').click()
+  await page.fill('#jdE-t', 'Senior Account Director')
+  await page.locator('button[data-act="jd-save"]').click()
+  let st = await page.evaluate(() => JSON.parse(localStorage.getItem('mercieca-recruitment-v2')))
+  assert(st.jds.find((j) => j.id === 'jd-ad').level === 'Senior Account Director', 'level not updated with the title')
+  while (await page.locator('button[data-act="jd-edit"]').count()) {
+    await page.locator('button[data-act="jd-edit"]').first().click()
+    await page.locator('button[data-act="jd-del"]').click()
+  }
+  await page.reload()
+  st = await page.evaluate(() => JSON.parse(localStorage.getItem('mercieca-recruitment-v2')))
+  assert(st.jds.length === 0, `deleted roles came back: ${st.jds.length}`)
+  assert(await page.locator('button[data-act="jd-restore"]').count() === 1, 'no way to bring the standard roles back')
   await context.close()
 })
 
