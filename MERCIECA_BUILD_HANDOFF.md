@@ -23,60 +23,42 @@ Mercieca describes itself as a creative services and PR agency that lives and br
 
 ## 3. Current live application
 
-Frankie can open this now:
+Frankie opens:
 
-https://plots-laboratories-signal-fate.trycloudflare.com/
+https://www.tchworks.co.uk/mercieca-recruitment/
 
-Checked 22 September 2026, 23:06 UK. The page returned the call sheet, including Alex Watherston, James Brown, Contact candidate, How close, Search LinkedIn, and the interview questions.
+Served by GitHub Pages from `wilsonryan-hue/wilsonryan-hue.github.io`, file `mercieca-recruitment/index.html` (that repo is also the TCH Works shop; keep it public). Checked 6 October 2026: the live file was byte-identical to `index.html` on this repo's `main` before the v2 desk.
 
-It is not on mercieca.co.uk.
+This repository is the source. Its own Pages workflow never worked (Pages was not enabled here) and was replaced by a CI check on 6 October 2026. The old Cloudflare tunnel address is dead; do not send it.
 
-This address is a live tunnel from the build machine. It works while that machine is running. It is not a permanent website. GitHub Pages could not be turned on: the connected GitHub account can push files, and it is not allowed to publish a Pages site (HTTP 403).
+Copy tool link copies the address above, whatever address the page was opened from.
 
-Public source, which ChatGPT can open:
-
-https://github.com/wilsonryan-hue/mercieca-call-sheet
-
-Raw handover:
-
-https://raw.githubusercontent.com/wilsonryan-hue/mercieca-call-sheet/main/MERCIECA_BUILD_HANDOFF.md
-
-Raw job-board matrix:
-
-https://raw.githubusercontent.com/wilsonryan-hue/mercieca-call-sheet/main/PROVIDER_MATRIX.md
-
-Send link on the page copies a link on the same address, with the sheet in `?s=`.
-
-What the public page does: the two checked people, score, status, Contact candidate, the first-call script, CV link paste, interview questions, How close (50–100), LinkedIn search, paste a profile onto an empty agency, one person per agency.
-
-What it does not do: it does not run Grok's web search. That needs a private server key, which is not put on a public page. Search LinkedIn opens LinkedIn. Frankie signs in there herself.
+Putting a new version live = copying `index.html` into the github.io repo. Only with Ryan's yes.
 
 ## 4. Current architecture
 
-- TanStack Start, React, Vite, Tailwind v4, Zod, Nitro with a Vercel preset.
-- Call sheet state is the browser: `localStorage` key `mercieca-call-sheet-v4`, plus the `?s=` token. There is no candidate table.
-- Live search calls the xAI Responses API with web search, from `src/lib/search.functions.ts`. Models tried: grok-4.5, then grok-4.7.
-- Better Auth tables exist for "Sign in with Grok". The call sheet does not use them.
-- Database: Neon if `DATABASE_URL` is set, otherwise local PGLite. The call sheet does not read or write it.
-- No job-board API is connected.
+- One static `index.html`. Vanilla JavaScript, no libraries, no server, no network calls. Outbound links only.
+- State is the browser: `localStorage` key `mercieca-recruitment-v2`. Work from the older one-screen sheet (`mercieca-recruitment-v1`) is carried over the first time v2 opens, and the old key is left in place.
+- Hash routes: #home #find #searches #new #jobs #boards #pay #messages #help.
+- Every loaded or imported state goes through `normalize()`: types, enums, lengths, http/https links only, safe ids, no duplicate search ids, no `__proto__` keys.
+- No xAI/Grok search, TanStack, database or sign-in in this repo. Earlier notes describing those were about a different build.
 
 ## 5. What currently works
 
-- Default brief: Account Director, consumer PR, London.
-- Two checked people, different agencies: Alex Watherston (PrettyGreen, LBB and The Drum, 29 October 2025) and James Brown (Hope & Glory, his public LinkedIn about). James's start date is Unknown. Hope & Glory has not confirmed him on their own site.
-- One person per agency. A second person from the same employer is refused.
-- Empty rows for Taylor Herring, Golin, Ogilvy, Grayling, The Romans, MSL, and Frank, each with a LinkedIn search and a paste box.
-- Score, status, Contact candidate, first-call script, role pitch, CV link paste, interview questions.
-- How close control, 50% to 100%, in steps of 10. Frankie moves it, then presses Search again. 100% is the exact brief. 50% allows nearby titles and nearby sectors. It does not allow invented people.
-- Send link, on the current preview address only.
+- Home, with the current search, recent searches and backup/restore.
+- Several searches. Each keeps its own people; the ten checked people sit on the default Account Director search.
+- How close, 50% to 100%. LinkedIn and Google search links built from the search.
+- One person per employer ("Hope & Glory" = "Hope&Glory", "Ogilvy" = "Ogilvy UK"). Mercieca staff refused. Profile link required.
+- Status, score, private notes, CV link. Ready-written messages filled with the person's name and employer.
+- Job description bank, job boards list with Frankie's own profile notes, pay check from PR Futures 2026, editable message templates, help page.
+- Shortlist CSV export and backup file.
+- `npm run verify:browser` drives all of the above in Chromium on every pull request.
 
 ## 6. Built but not verified
 
-- A successful live web search from Frankie's browser in this session. The API can time out or return 429. If it fails, the people already on the sheet stay.
-- That James Brown is still at Hope & Glory. The source is his own LinkedIn about, not an agency page.
-- That Alex Watherston is still at PrettyGreen. The announcement is 29 October 2025. No departure was found.
-- The share link on any public host.
-- Mercieca colours, logo, or type. The word Mercieca is on the page. The visual identity is not taken from the site.
+- Real browsers on Frankie's machine (Edge, Safari, phone). CI uses Chromium only.
+- That the ten people are still in the roles listed. Sources were checked 24 September 2026.
+- Campaign Jobs could not be opened on 6 October 2026; PRWeek Jobs (same publisher) has closed. The desk tells Frankie to check before paying.
 
 ## 7. Job board / recruitment integrations
 
@@ -95,33 +77,24 @@ None are connected. See `PROVIDER_MATRIX.md`. This call sheet does not post vaca
 
 ## 9. Current data model
 
-No recruitment tables.
+No recruitment tables. Browser only (`mercieca-recruitment-v2`):
 
-Client only:
-
-- Brief: role, level, place, must, similar, avoid, optional match (50–100).
-- Person: name, title, employer, location, status, tenure, rating, why, evidence, source URL, optional CV URL, contact state.
-
-Server, unused by the call sheet: Better Auth `user`, `session`, `account`, `verification` in `migrations/auth/0001_auth.sql`.
+- Searches: title, level, sector, place, helpful experience, linked job description, How close, open/closed, manual people.
+- Person: name, title, employer, location, match, why, evidence, source link.
+- Work per person: status, score, notes, CV link, chosen message.
+- Job descriptions, job board profile notes, message templates, Frankie's name, pay check inputs.
 
 ## 10. Current UI / workflows
 
-One screen, Call sheet.
-
-1. See the role, how many agencies are named, and how many are still open.
-2. Set How close from 50% to 100%. Press Search again.
-3. Read a person. Set a score. Press Contact candidate for the script, or CV.
-4. For an open agency, open LinkedIn, paste one profile, press Add.
-5. Press Send link if someone else needs this same sheet on this same address.
+Home, Find people, My searches, Job descriptions, Job boards, Pay check, Messages, How to use. The How to use page walks Frankie through a first search step by step.
 
 ## 11. Security / GDPR
 
-- No CV file is stored. A CV is a link Frankie pastes. It sits in the browser and in the share token.
-- The share token contains the names and notes. Anyone with the link can read them.
+- No CV file is stored. A CV is a link Frankie pastes, kept in her browser.
+- The `?s=` share link from v1 was removed in v2, so names are no longer put in web addresses.
 - No candidate email or phone is collected.
-- No retention job. Clearing the browser clears the sheet, unless the link was copied.
-- Mercieca's privacy policy and data-retention policy were not found on the pages checked. Do not draft a fake one.
-- Sign-in exists in the scaffold and is not wired to this screen.
+- Deleting a person or a search deletes the private notes on them. No other retention job.
+- The privacy policy link points at mercieca.co.uk/privacy-policy. Do not draft a fake one.
 
 ## 12. External accounts / approvals required
 
@@ -131,11 +104,9 @@ One screen, Call sheet.
 
 ## 13. Known bugs / blockers
 
-- Only two people are checked. The rest of the sheet is empty agency rows.
-- Live search often fails or returns too little. The sheet must stay honest rather than fill itself.
-- Live search on the public page is LinkedIn only. Grok web search is not on that page.
-- The app is not linked from mercieca.co.uk.
-- Share URLs are long because the whole sheet is in the query string.
+- Data lives in one browser. A second computer is a second, empty desk unless a backup file is restored.
+- The desk builds searches; it does not run them or read LinkedIn.
+- Pay figures are one UK-wide source with no London split; the page says so.
 
 ## 14. Current priorities
 
@@ -151,8 +122,10 @@ One screen, Call sheet.
 | 2026-09-22 | Grok | Call sheet with contact, CV, script, interview questions, share token. | `src/components/call-desk.tsx`, `src/lib/people.ts`, `src/lib/share.ts` | Tests and preview smoke. Not a public URL. |
 | 2026-09-22 | Grok | Removed the extra PrettyGreen names. One person per agency. Empty rows for the other agencies. | `src/lib/people.ts`, `src/components/call-desk.tsx` | Tests. Alex rechecked on LBB. James checked on the public LinkedIn about only. |
 | 2026-09-22 | Grok | How close control, 50–100, changes the search width. Search again uses it. | `src/lib/brief.ts`, `src/components/call-desk.tsx` | Typecheck and unit test of the prompt text. A live search at 50% was not run in this change. |
+| 2026-10-06 | Claude | v2 desk taken from the review branch. Copy tool link and canonical back to the tchworks address (the branch pointed at an unverified Vercel address). PRWeek Jobs removed (closed). One-per-employer check ignores "&"/"and", spacing, "The", "UK". Deleting a search deletes its private notes. Safer backup import. Browser check added; broken Pages workflow replaced with CI. | `index.html`, `scripts/`, `.github/workflows/verify.yml` | `npm run build`, `npm run verify:browser` (12 checks). Not yet live. |
 | 2026-09-22 | Grok | Put the call sheet and this handover in a public GitHub repo. GitHub Pages publish was refused (403). Served the sheet on a Cloudflare tunnel instead. | `index.html` and the two markdown files in wilsonryan-hue/mercieca-call-sheet | Public URL fetched. Alex Watherston and Contact candidate were on the page. |
 
 ## 16. Last updated
 
-22 September 2026, 23:06 UK time. Grok. Working link: https://plots-laboratories-signal-fate.trycloudflare.com/
+6 October 2026, Claude. Live: https://www.tchworks.co.uk/mercieca-recruitment/
+

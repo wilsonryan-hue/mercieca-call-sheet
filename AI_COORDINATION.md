@@ -237,3 +237,12 @@ Current `index.html` implements **Send link** as:
 `location.origin + location.pathname`
 
 That means if the app is opened from an ephemeral preview, it copies that ephemeral preview address. This was a predictable production-readiness failure and must be fixed before launch.
+
+### 2026-10-06 — Claude: v2 desk review
+
+- STATUS: PR open from `claude/project-thread-jybvw3`. Not live.
+- CHANGED: v2 desk fixes (live tchworks link restored, PRWeek Jobs removed as closed, employer check, notes deleted with a search, safer import). Broken Pages workflow replaced by `verify` CI.
+- VERIFIED: `npm run build`, `npm run verify:browser` (12 Chromium checks).
+- RISK/BLOCKER: going live means copying `index.html` to `wilsonryan-hue.github.io/mercieca-recruitment/`. Needs Ryan's yes.
+- NEXT: Ryan merges, then deploy to tchworks.
+- NEEDS_RYAN: yes (merge and deploy).
