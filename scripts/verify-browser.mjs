@@ -145,6 +145,15 @@ await check('a new search starts empty; deleting it also deletes its private not
   await page.locator('button[data-act="jd-use"][data-id="jd-sam"]').click()
   await page.waitForSelector('#nsTitle')
   assert(await page.inputValue('#nsTitle') === 'Senior Account Manager', 'job title was not filled from the job description')
+  await page.selectOption('#nsJd', '')
+  assert(await page.inputValue('#nsTitle') === '' && await page.inputValue('#nsLevel') === '', 'Another role kept the old title')
+  await page.locator('a.btn', { hasText: 'Cancel' }).click()
+  await page.waitForFunction(() => location.hash === '#home' && document.querySelector('.hero'))
+  await go(page, 'new')
+  assert(await page.inputValue('#nsTitle') === '', 'cancelled role prefilled again')
+  await go(page, 'jobs')
+  await page.locator('button[data-act="jd-use"][data-id="jd-sam"]').click()
+  await page.waitForSelector('#nsTitle')
   await page.click('form[data-form="new-search"] button[type=submit]')
   await page.waitForSelector('#candList .empty')
   await page.fill('#addName', 'Pat Person'); await page.fill('#addEmployer', 'Some Agency')
@@ -189,8 +198,11 @@ await check('a damaged or hostile backup file cannot break the desk', async () =
     "searches": [
       {"id": "p", "title": "Proto", "custom": [
         {"id": "__proto__", "name": "Proto Id", "employer": "B", "sourceUrl": "https://example.com/p"},
-        {"id": "nosrc", "name": "No Source", "employer": "C"}
+        {"id": "nosrc", "name": "No Source", "employer": "C"},
+        {"id": "alex-watherston", "name": "Clash One", "employer": "D", "sourceUrl": "https://example.com/d"},
+        {"id": "twin", "name": "Twin One", "employer": "E", "sourceUrl": "https://example.com/e"}
       ]},
+      {"id": "q", "title": "Twins", "custom": [{"id": "twin", "name": "Twin Two", "employer": "F", "sourceUrl": "https://example.com/f"}]},
       {"id": "dup", "title": "One", "custom": [{"id": "x\\" onmouseover=\\"alert(1)", "name": "Quote Id", "employer": "A", "sourceUrl": "javascript:alert(1)"}]},
       {"id": "dup", "title": "Two", "threshold": 5000},
       {"id": "a b'c", "title": "<script>alert(1)</script>"}
@@ -212,6 +224,8 @@ await check('a damaged or hostile backup file cannot break the desk', async () =
   assert(st.pay.sector === 'consumer', 'bad pay sector kept')
   const people = st.searches.flatMap((s) => s.custom)
   assert(people.every((c) => c.id !== '__proto__' && /^https?:/.test(c.sourceUrl)), 'person with a prototype id or no source kept')
+  const pids = people.map((c) => c.id)
+  assert(new Set(pids).size === pids.length && !pids.includes('alex-watherston'), `people share an id: ${pids}`)
   assert(({}).polluted === undefined && await page.evaluate(() => ({}).polluted) === undefined, 'prototype polluted')
   for (const r of ['home', 'searches', 'pay', 'messages', 'find']) await go(page, r)
   for (const i of [0, 1, 2]) await page.selectOption('#curSearch', { index: i })

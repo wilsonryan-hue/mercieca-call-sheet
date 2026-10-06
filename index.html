@@ -510,6 +510,13 @@
       var u = safeUrl(b && b.url); if(!b || !b.name || !u) return;
       st.customBoards.push({id:safeId(b.id) || uid("cb"),name:str(b.name,100),url:u});
     });
+    // Every person, role and board needs its own id: ids key private notes and page elements.
+    function uniq(list, taken, prefix){ list.forEach(function(x){ while(taken[x.id]) x.id = uid(prefix); taken[x.id] = true; }); }
+    var people = {}; VERIFIED.forEach(function(v){ people[v.id] = true; });
+    st.searches.forEach(function(sr){ uniq(sr.custom, people, "manual"); });
+    uniq(st.jds, {}, "jd");
+    var boards = {}; BOARDS.forEach(function(b){ boards[b.id] = true; });
+    uniq(st.customBoards, boards, "cb");
     if(raw.templates && typeof raw.templates === "object"){
       Object.keys(raw.templates).forEach(function(k){ if(ownKey(st.templates, k) && typeof raw.templates[k] === "string") st.templates[k] = raw.templates[k].slice(0,6000); });
     }
@@ -941,6 +948,7 @@
   function render(focusTitle){
     var r = (location.hash || "#home").replace("#","");
     route = VIEWS[r] ? r : "home";
+    if(route !== "new") ui.newFrom = "";
     $("#app").innerHTML = VIEWS[route]();
     renderNav();
     if(route === "find"){ renderWhere(); renderCandidates(); }
@@ -1133,7 +1141,8 @@
 
   document.addEventListener("change", function(e){
     if(e.target.id !== "nsJd") return;
-    var j = jdById(e.target.value); if(!j) return;
+    var j = jdById(e.target.value);
+    if(!j){ $("#nsTitle").value = ""; $("#nsLevel").value = ""; return; }
     $("#nsTitle").value = j.title; if(j.level) $("#nsLevel").value = j.level;
   });
 
